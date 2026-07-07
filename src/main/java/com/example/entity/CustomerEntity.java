@@ -2,6 +2,8 @@ package com.example.entity;
 
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
@@ -12,7 +14,8 @@ import com.example.entity.enums.Status;
 
 @Document (collection = "customers")
 @Data
-public class Customer {
+@NoArgsConstructor
+public class CustomerEntity {
 
     @Id
     private String id;
