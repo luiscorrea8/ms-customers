@@ -1,0 +1,12 @@
+{
+    "name": "Raj",
+    "mail": "raj@gmail.com",
+    "department": { 
+    	"department_name": "Computer Science", 
+    	"location": "INDIA" 
+    },
+    "subjects": [
+      { "subject_name": "Java", "marks_obtained": 70 },
+      { "subject_name": "C++", "marks_obtained": 70 }
+    ]
+}
