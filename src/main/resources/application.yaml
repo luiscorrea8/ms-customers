@@ -1,0 +1,16 @@
+resilience4j.circuitbreaker:
+  circuitbreaker:
+    instances:
+      CircuitBreakerApi:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        waitDurationInOpenState: 10s
+        failureRateThreshold: 50
+        eventConsumerBufferSize: 10
+        slidingWindowType: COUNT_BASED
+resilience4j.timelimiter:
+  instances:
+    default:
+      timeoutDuration: 2s

@@ -4,14 +4,13 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
-import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.core.Single;
-import io.reactivex.rxjava3.schedulers.Schedulers;
-
 import com.example.entity.Customer;
 import com.example.entity.enums.CustomerType;
 import com.example.repository.CustomerRepository;
 
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -19,47 +18,45 @@ public class CustomerService {
     @Autowired
 	CustomerRepository customerRepository;
 
-	public Single<Customer> createCustomer(Customer customer) {
-		return Single.fromCallable(() -> customerRepository.save(customer))
-				.subscribeOn(Schedulers.io());
+	public Mono<Customer> createCustomer(Customer customer) {
+		return Mono.fromCallable(() -> customerRepository.save(customer))
+				.subscribeOn(Schedulers.boundedElastic());
 	}
 
-	public Single<Customer> getCustomerById(String id) {
-		return Single.fromCallable(() -> customerRepository.findById(id)
+	public Mono<Customer> getCustomerById(String id) {
+		return Mono.fromCallable(() -> customerRepository.findById(id)
 				.orElseThrow(() -> new RuntimeException("Customer not found with id: " + id)))
-				.subscribeOn(Schedulers.io());
+				.subscribeOn(Schedulers.boundedElastic());
 	}
 
-	public Observable<Customer> getAllCustomers() {
-		return Observable.defer(() -> Observable.fromIterable(customerRepository.findAll()))
-				.subscribeOn(Schedulers.io());
+	public Flux<Customer> getAllCustomers() {
+		return Flux.defer(() -> Flux.fromIterable(customerRepository.findAll()))
+				.subscribeOn(Schedulers.boundedElastic());
 	}
 
 
-	public Single<CustomerType> customerType(String id) {
-		return Single.fromCallable(() -> {
-			if (!customerRepository.existsById(id)) {
-				throw new RuntimeException("Customer not found with id: " + id);
-			}
-			Optional<Customer> customer = customerRepository.findById(id);
-			CustomerType customerType = customer.get().getCustomerType();
-			return customerType;
-		}).subscribeOn(Schedulers.io());
+	public Mono<CustomerType> customerType(String id) {
+		return Mono.fromCallable(() -> customerRepository.findById(id)
+						.map(Customer::getCustomerType)
+						.orElseThrow(() -> new RuntimeException("Customer not found with id: " + id)))
+				.subscribeOn(Schedulers.boundedElastic());
 	}
 
-	public Single<Customer> updateCustomer(Customer customer) {
-		return Single.fromCallable(() -> {
-			if (!customerRepository.existsById(customer.getId())) {
-				throw new RuntimeException("Customer not found with id: " + customer.getId());
-			}
-			return customerRepository.save(customer);
-		}).subscribeOn(Schedulers.io());
+	public Mono<Customer> updateCustomer(Customer customer) {
+		return Mono.fromCallable(() -> customerRepository.findById(customer.getId())
+						.map(existingCustomer -> customerRepository.save(customer))
+						.orElseThrow(() -> new RuntimeException("Customer not found with id: " + customer.getId())))
+				.subscribeOn(Schedulers.boundedElastic());
 	}
 
-	public Single<String> deleteCustomer(String id) {
-		return Single.fromCallable(() -> {
-			customerRepository.deleteById(id);
-			return "Customer has been deleted.";
-		}).subscribeOn(Schedulers.io());
+	public Mono<Void> deleteCustomer(String id) {		
+		return Mono.fromRunnable(() -> {			
+			customerRepository.findById(id).ifPresentOrElse(
+				customer -> customerRepository.deleteById(id),
+				() -> { throw new RuntimeException("Customer not found with id: " + id); }
+			);
+		})
+		.subscribeOn(Schedulers.boundedElastic())
+		.then();
 	}
 }
